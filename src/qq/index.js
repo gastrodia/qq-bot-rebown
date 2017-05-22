@@ -80,7 +80,7 @@ class QQ {
 
     async login() {
         beforeGotVfwebqq: {
-            if (fs.existsSync(cookiePath)) {
+            if (true || fs.existsSync(cookiePath)) {
                 try {
                     const cookieText = this.cookieText; // fs.readFileSync(cookiePath, 'utf-8').toString();
 
@@ -169,8 +169,14 @@ class QQ {
             log.info('(4/5) 获取 vfwebqq 成功');
         } catch (err) {
             // childProcess.execSync(`rm ${cookiePath}`);
-            log.info('(-/5) Cookie 已失效，切换到扫码登录');
-            return this.login();
+            // log.info('(-/5) Cookie 已失效，切换到扫码登录');
+            // return this.login();
+
+            log.info('(-/5) Cookie 已失效，退出登录');
+            if (this.logoutCallback) {
+                this.logoutCallback();
+            }
+            return;
         }
         // Step5: psessionid and uin
         const loginStat = await this.client.post({
