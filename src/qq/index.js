@@ -166,17 +166,21 @@ class QQ {
         fs.writeFile(cookiePath, cookie, 'utf-8', () => log.info(`保存 Cookie 到 ${cookiePath}`));
     }
 
-    getSelfInfo() {
+    async getSelfInfo() {
         log.info('开始获取用户信息');
-        const resp = this.client.get({
+        const resp = await this.client.get({
             url: URL.selfInfo,
             headers: { Referer: URL.referer130916 }
         });
         if (resp.retcode == 6 && resp.result.vfwebqq) {
+            const { vfwebqq } = resp.result;
             log.info('更新 vfwebqq');
-            this.tokens.vfwebqq = resp.result.vfwebqq;
+            this.tokens.vfwebqq = vfwebqq;
+            this.client.updateCookie({ vfwebqq });
+            return await this.getSelfInfo();
+        } else {
+            return resp;
         }
-        return resp;
     }
 
     getBuddy() {
