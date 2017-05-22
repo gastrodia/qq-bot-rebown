@@ -176,6 +176,7 @@ class QQ {
             log.info('更新 vfwebqq');
             this.tokens.vfwebqq = resp.result.vfwebqq;
         }
+        return resp;
     }
 
     getBuddy() {
@@ -233,6 +234,7 @@ class QQ {
     async initInfo() {
         this.selfInfo = await this.getSelfInfo();
         log.debug(JSON.stringify(this.selfInfo, null, 4));
+        await sleep(1000);
         let manyInfo = await Promise.all([
             this.getBuddy(),
             this.getDiscu(),
