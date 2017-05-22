@@ -1,13 +1,6 @@
 'use strict';
 
-const { QQ, MsgHandler } = require('.');
-
-const buddyHandler = new MsgHandler(
-    (msg, qq) => {
-        qq.sendBuddyMsg(msg.id, `Hello ${msg.name}`);
-    },
-    'buddy'
-);
+const {QQ, MsgHandler} = require('.');
 
 const groupHandler = new MsgHandler(
     msg => {
@@ -15,4 +8,10 @@ const groupHandler = new MsgHandler(
     }, 'buddy', 'discu', 'group'
 );
 
-new QQ(buddyHandler, groupHandler).run();
+new QQ(groupHandler).run(false, function (data) {
+    console.log(data);
+}, function () {
+    console.log('登录成功');
+}, function () {
+    console.log('登录失败');
+});

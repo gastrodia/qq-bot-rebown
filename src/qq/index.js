@@ -91,7 +91,7 @@ class QQ {
                     break beforeGotVfwebqq;
                 } catch (err) {
                     this.tokens.ptwebqq = '';
-                    childProcess.exec(`rm ${cookiePath}`);
+                    // childProcess.exec(`rm ${cookiePath}`);
                     log.info('(-/5) Cookie 文件非法，自动登录失败');
                 }
             }
@@ -123,7 +123,7 @@ class QQ {
             //await writeFileAsync(qrcodePath, qrCode, 'binary');
             log.info(`(1/5) 二维码下载到 ${qrcodePath} ，等待扫描`);
             // open file, only for linux
-            childProcess.exec(`xdg-open ${qrcodePath}`);
+            // childProcess.exec(`xdg-open ${qrcodePath}`);
 
             // Step2: 
             let scanSuccess = false;
@@ -144,7 +144,7 @@ class QQ {
             } while (!scanSuccess);
             log.info('(2/5) 二维码扫描完成');
             // remove file, for linux(or macOS ?)
-            childProcess.exec(`rm ${qrcodePath}`);
+            // childProcess.exec(`rm ${qrcodePath}`);
 
             // Step3: find token 'vfwebqq' in cookie
             // NOTICE: the request returns 302 when success. DO NOT REJECT 302.
@@ -168,7 +168,7 @@ class QQ {
             this.tokens.vfwebqq = vfwebqqResp.result.vfwebqq;
             log.info('(4/5) 获取 vfwebqq 成功');
         } catch (err) {
-            childProcess.execSync(`rm ${cookiePath}`);
+            // childProcess.execSync(`rm ${cookiePath}`);
             log.info('(-/5) Cookie 已失效，切换到扫码登录');
             return this.login();
         }
