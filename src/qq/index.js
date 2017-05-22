@@ -168,10 +168,14 @@ class QQ {
 
     getSelfInfo() {
         log.info('开始获取用户信息');
-        return this.client.get({
+        const resp = this.client.get({
             url: URL.selfInfo,
             headers: { Referer: URL.referer130916 }
         });
+        if (resp.retcode == 6 && resp.result.vfwebqq) {
+            log.info('更新 vfwebqq');
+            this.tokens.vfwebqq = resp.result.vfwebqq;
+        }
     }
 
     getBuddy() {
@@ -227,18 +231,18 @@ class QQ {
     }
 
     async initInfo() {
+        this.selfInfo = await this.getSelfInfo();
+        log.debug(JSON.stringify(this.selfInfo, null, 4));
         let manyInfo = await Promise.all([
-            this.getSelfInfo(),
             this.getBuddy(),
-            this.getOnlineBuddies(),
             this.getDiscu(),
-            this.getGroup()
+            this.getGroup(),
+            this.getOnlineBuddies()
         ]);
         log.debug(JSON.stringify(manyInfo, null, 4));
-        this.selfInfo = manyInfo[0].result;
-        this.buddy = manyInfo[1].result;
-        this.discu = manyInfo[3].result.dnamelist;
-        this.group = manyInfo[4].result.gnamelist;
+        this.buddy = manyInfo[0].result;
+        this.discu = manyInfo[1].result.dnamelist;
+        this.group = manyInfo[2].result.gnamelist;
         let promises = this.group.map(async e => {
             const rawInfo = await this.getGroupInfo(e.code);
             return e.info = rawInfo.result;
@@ -413,17 +417,21 @@ class QQ {
     }
 
     async innerSendMsg(url, key, id, content) {
+        /* it returns 
+         * { errmsg: 'error!!!', retcode: 100100 }
+         * when success, i don't know why.
+         * fxxk tencent
+         */
         const resp = await this.client.post({
             url,
             data: this.messageAgent.build(key, id, content),
             headers: { Referer: URL.referer151105 }
         });
         log.debug(resp);
-        /* it returns 
-         * { errmsg: 'error!!!', retcode: 100100 }
-         * when success, i don't know why.
-         * fxxk tencent
-         */
+        // maybe vfwebqq expired...
+        if (resp.retcode == 1202) {
+            await this.getSelfInfo();
+        }
         return resp;
     }
 
