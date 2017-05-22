@@ -42,6 +42,11 @@ class QQ {
             vfwebqq: '',
             psessionid: ''
         };
+        this.cookieText = '';
+        this.qrcodeCallback;
+        this.loginCallback;
+        this.logoutCallback;
+
         this.selfInfo = {};
         this.buddy = {};
         this.discu = {};
@@ -54,7 +59,20 @@ class QQ {
         this.msgHandlers = msgHandlers;
     }
 
-    async run() {
+    async run(cookieText, qrcodeCallback, loginCallback, logoutCallback) {
+        if (cookieText) {
+            this.cookieText = cookieText;
+        }
+        if (qrcodeCallback) {
+            this.qrcodeCallback = qrcodeCallback;
+        }
+        if (loginCallback) {
+            this.loginCallback = loginCallback;
+        }
+        if (logoutCallback) {
+            this.logoutCallback = logoutCallback;
+        }
+
         await this.login();
         await this.initInfo();
         await this.loopPoll();
@@ -64,7 +82,8 @@ class QQ {
         beforeGotVfwebqq: {
             if (fs.existsSync(cookiePath)) {
                 try {
-                    const cookieText = fs.readFileSync(cookiePath, 'utf-8').toString();
+                    const cookieText = this.cookieText; // fs.readFileSync(cookiePath, 'utf-8').toString();
+
                     log.info('(-/5) 检测到 cookie 文件，尝试自动登录');
                     this.tokens.ptwebqq = cookieText.match(/ptwebqq=(.+?);/)[1];
                     this.client.setCookie(cookieText);
@@ -88,8 +107,20 @@ class QQ {
             await this.client.get(URL.loginPrepare);
 
             // Step1: download QRcode
-            const qrCode = await this.client.get({ url: URL.qrcode, responseType: 'arraybuffer' });
-            await writeFileAsync(qrcodePath, qrCode, 'binary');
+            const qrCode = await this.client.get({url: URL.qrcode, responseType: 'arraybuffer'});
+            try {
+                let qrbase64 = new Buffer(qrCode, "binary").toString("base64");
+                if (this.qrcodeCallback) {
+                    this.qrcodeCallback({qrcode: "data:image/png;base64," + qrbase64});
+                }
+            } catch (err) {
+                if (err) {
+                    console.error('\n', err.stack || err.message)
+                }
+                return false;
+            }
+
+            //await writeFileAsync(qrcodePath, qrCode, 'binary');
             log.info(`(1/5) 二维码下载到 ${qrcodePath} ，等待扫描`);
             // open file, only for linux
             childProcess.exec(`xdg-open ${qrcodePath}`);
@@ -102,7 +133,7 @@ class QQ {
             do {
                 const responseBody = await this.client.get({
                     url: ptqrloginURL,
-                    headers: { Referer: URL.ptqrloginReferer },
+                    headers: {Referer: URL.ptqrloginReferer},
                 });
                 log.debug(responseBody);
                 const arr = responseBody.match(quotRegxp).map(i => i.substring(1, i.length - 1));
@@ -121,7 +152,7 @@ class QQ {
                 url: ptlogin4URL,
                 maxRedirects: 0,     // Axios follows redirect automatically, but we need to disable it here.
                 validateStatus: status => status === 302,
-                headers: { Referer: URL.ptlogin4Referer }
+                headers: {Referer: URL.ptlogin4Referer}
             });
             this.tokens.ptwebqq = this.client.getCookie('ptwebqq');
             log.info('(3/5) 获取 ptwebqq 成功');
@@ -130,7 +161,7 @@ class QQ {
         // Step4: request token 'vfwebqq'
         const vfwebqqResp = await this.client.get({
             url: URL.getVfwebqqURL(this.tokens.ptwebqq),
-            headers: { Referer: URL.vfwebqqReferer }
+            headers: {Referer: URL.vfwebqqReferer}
         });
         log.debug(vfwebqqResp);
         try {
@@ -163,14 +194,20 @@ class QQ {
         });
         log.info('(5/5) 获取 psessionid 和 uin 成功');
         const cookie = await this.client.getCookieString();
-        fs.writeFile(cookiePath, cookie, 'utf-8', () => log.info(`保存 Cookie 到 ${cookiePath}`));
+
+        this.cookieText = cookie;
+        //fs.writeFile(cookiePath, cookie, 'utf-8', () => log.info(`保存 Cookie 到 ${cookiePath}`));
+
+        if (this.loginCallback) {
+            this.loginCallback();
+        }
     }
 
     getSelfInfo() {
         log.info('开始获取用户信息');
         return this.client.get({
             url: URL.selfInfo,
-            headers: { Referer: URL.referer130916 }
+            headers: {Referer: URL.referer130916}
         });
     }
 
@@ -272,7 +309,7 @@ class QQ {
     getDiscuInfo(did) {
         return this.client.get({
             url: URL.discuInfo(did, this.tokens.psessionid, this.tokens.vfwebqq),
-            headers: { Referer: URL.referer151105 }
+            headers: {Referer: URL.referer151105}
         });
     }
 
@@ -303,7 +340,7 @@ class QQ {
     getGroupInfo(code) {
         return this.client.get({
             url: URL.groupInfo(code, this.tokens.vfwebqq),
-            headers: { Referer: URL.referer130916 }
+            headers: {Referer: URL.referer130916}
         });
     }
 
@@ -326,7 +363,7 @@ class QQ {
 
     logMessage(msg) {
         const content = msg.result[0].value.content.filter(e => typeof e == 'string').join(' ');
-        const { from_uin, send_uin } = msg.result[0].value;
+        const {from_uin, send_uin} = msg.result[0].value;
         switch (msg.result[0].poll_type) {
             case 'message':
                 log.info(`[新消息] ${this.getBuddyName(from_uin)} | ${content}`);
@@ -341,8 +378,8 @@ class QQ {
 
     handelMsgRecv(msg) {
         const content = msg.result[0].value.content.filter(e => typeof e == 'string').join(' ');
-        const { from_uin, send_uin } = msg.result[0].value;
-        let msgParsed = { content };
+        const {from_uin, send_uin} = msg.result[0].value;
+        let msgParsed = {content};
         switch (msg.result[0].poll_type) {
             case 'message':
                 msgParsed.type = 'buddy';
@@ -392,8 +429,12 @@ class QQ {
                 log.debug('Request Failed: ', err);
                 if (err.response.status === 502)
                     log.info(`出现 502 错误 ${++failCnt} 次，正在重试`);
-                if (failCnt > 10)
+                if (failCnt > 10) {
+                    if (this.logoutCallback) {
+                        this.logoutCallback();
+                    }
                     return log.error(`服务器 502 错误超过 ${failCnt} 次，连接已断开`);
+                }
             } finally {
                 log.debug(msgContent);
                 if (msgContent) {
@@ -416,7 +457,7 @@ class QQ {
         const resp = await this.client.post({
             url,
             data: this.messageAgent.build(key, id, content),
-            headers: { Referer: URL.referer151105 }
+            headers: {Referer: URL.referer151105}
         });
         log.debug(resp);
         /* it returns 
