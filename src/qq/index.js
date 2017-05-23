@@ -77,9 +77,11 @@ class QQ {
             this.contactsUpdatedCallback = contactsUpdatedCallback;
         }
 
-        await this.login();
-        await this.initInfo();
-        await this.loopPoll();
+        let loginSuccess = await this.login();
+        if(loginSuccess !== false){
+            await this.initInfo();
+            await this.loopPoll();
+        }
     }
 
     async login() {
@@ -212,6 +214,7 @@ class QQ {
         if (this.loginCallback) {
             this.loginCallback();
         }
+        return true;
     }
 
     getSelfInfo() {
