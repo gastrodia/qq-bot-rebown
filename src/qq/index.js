@@ -373,8 +373,12 @@ class QQ {
                 break;
             }
         }
-        group.info.cards.some(i => i.muin == uin ? name = i.card : false);
-        if (!name) group.info.minfo.some(i => i.uin == uin ? name = i.nick : false);
+        if(group.info.cards){
+            group.info.cards.some(i => i.muin == uin ? name = i.card : false);
+        }
+        if (!name && group.info.minfo){
+            group.info.minfo.some(i => i.uin == uin ? name = i.nick : false);
+        }
         this.groupNameMap.set(nameKey, name);
         return name;
     }
