@@ -46,6 +46,7 @@ class QQ {
         this.qrcodeCallback;
         this.loginCallback;
         this.logoutCallback;
+        this.contactsUpdatedCallback;
 
         this.selfInfo = {};
         this.buddy = {};
@@ -59,7 +60,7 @@ class QQ {
         this.msgHandlers = msgHandlers;
     }
 
-    async run(cookieText, qrcodeCallback, loginCallback, logoutCallback) {
+    async run(cookieText, qrcodeCallback, loginCallback, logoutCallback, contactsUpdatedCallback) {
         if (cookieText) {
             this.cookieText = cookieText;
         }
@@ -71,6 +72,9 @@ class QQ {
         }
         if (logoutCallback) {
             this.logoutCallback = logoutCallback;
+        }
+        if (contactsUpdatedCallback) {
+            this.contactsUpdatedCallback = contactsUpdatedCallback;
         }
 
         await this.login();
@@ -293,6 +297,10 @@ class QQ {
         manyInfo = await Promise.all(promises);
         log.debug(JSON.stringify(manyInfo, null, 4));
         log.info('信息初始化完成');
+
+        if (this.contactsUpdatedCallback) {
+            this.contactsUpdatedCallback();
+        }
     }
 
     getBuddyName(uin) {
