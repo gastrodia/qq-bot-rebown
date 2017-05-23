@@ -162,13 +162,14 @@ class QQ {
             log.info('(3/5) 获取 ptwebqq 成功');
         } // ========== label 'beforeGotVfwebqq' ends here ==========
 
-        // Step4: request token 'vfwebqq'
-        const vfwebqqResp = await this.client.get({
-            url: URL.getVfwebqqURL(this.tokens.ptwebqq),
-            headers: {Referer: URL.vfwebqqReferer}
-        });
-        log.debug(vfwebqqResp);
         try {
+            // Step4: request token 'vfwebqq'
+            const vfwebqqResp = await this.client.get({
+                url: URL.getVfwebqqURL(this.tokens.ptwebqq),
+                headers: {Referer: URL.vfwebqqReferer}
+            });
+            log.debug(vfwebqqResp);
+
             this.tokens.vfwebqq = vfwebqqResp.result.vfwebqq;
             log.info('(4/5) 获取 vfwebqq 成功');
         } catch (err) {
