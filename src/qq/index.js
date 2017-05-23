@@ -299,7 +299,7 @@ class QQ {
         log.info('信息初始化完成');
 
         if (this.contactsUpdatedCallback) {
-            this.contactsUpdatedCallback();
+            this.contactsUpdatedCallback(this.buddy, this.discu, this.group);
         }
     }
 
