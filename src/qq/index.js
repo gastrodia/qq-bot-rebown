@@ -176,7 +176,7 @@ class QQ {
             if (this.logoutCallback) {
                 this.logoutCallback();
             }
-            return;
+            return false;
         }
         // Step5: psessionid and uin
         const loginStat = await this.client.post({
